@@ -218,6 +218,7 @@ const AddHotelComponent = () => {
           options={["Free Wifi", "Swimming Pool", "Breakfast", "Lunch"]}
           values={amenities}
           onChange={(e) => setAmenities(e)}
+          isMultiple={true}
         />
         {error.amenities && (
           <p className="text-red-500 pl-2">Amenities is required</p>
@@ -228,6 +229,7 @@ const AddHotelComponent = () => {
           options={["Photo Id", "Swimming Pool", "Breakfast", "At 11:00 AM"]}
           values={checkInPolicies}
           onChange={(e) => setCheckInPolicies(e)}
+          isMultiple={true}
         />
         {error.checkInPolicies && (
           <p className="text-red-500 pl-2">Check In Policies is required</p>
@@ -238,6 +240,7 @@ const AddHotelComponent = () => {
           options={["By 12:00 PM", "Swimming Pool", "Breakfast", "Lunch"]}
           values={checkOutPolicies}
           onChange={(e) => setCheckOutPolicies(e)}
+          isMultiple={true}
         />
         {error.checkOutPolicies && (
           <p className="text-red-500 pl-2">Check Out Policies is required</p>
@@ -256,6 +259,7 @@ const AddHotelComponent = () => {
           placeholder="Opening Days"
           values={openingDays}
           onChange={(e) => setOpeningDays(e)}
+          isMultiple={true}
         />
         {error.openingDays && (
           <p className="text-red-500 pl-2">Opening Days is required</p>

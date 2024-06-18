@@ -1,17 +1,28 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import LinkContainer, { SmallLink } from "../components/LinkContainer";
-
-import { links } from "../lib/Links";
-import { Outlet } from "react-router-dom";
+import { adminLinks, hotelLinks, spotLinks } from "../lib/Links";
+import { Outlet, useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("DashBoard");
+  const [links, setLinks] = useState(adminLinks);
   const [activeSmallTab, setActiveSmallTab] = useState("");
-  const onClickTab = (title) => {
+  useEffect(() => {
+    const name = sessionStorage.getItem("name");
+    const isHotel = JSON.parse(sessionStorage.getItem("isHotel"));
+    if (name) {
+      setLinks(isHotel ? hotelLinks : spotLinks);
+    }
+  }, []);
+  const onClickTab = (title, path) => {
     setActiveTab(title);
+    setActiveSmallTab("");
+    path && navigate(`/dashboard/${path}`);
   };
-  const onClickSmallTab = (title) => {
+  const onClickSmallTab = (title, path) => {
     setActiveSmallTab(title);
+    path && navigate(`/dashboard/${path}`);
   };
   return (
     <div className="bg-[#D0D8DA] w-full h-screen overflow-auto overflow-x-hidden flex pt-[80px]">
@@ -22,6 +33,7 @@ const Dashboard = () => {
         {links.map((link) => (
           <LinkContainer
             key={link.title}
+            path={link.path}
             title={link.title}
             onClick={onClickTab}
             activeTab={activeTab}

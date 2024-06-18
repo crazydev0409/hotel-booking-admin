@@ -4,7 +4,7 @@ import PlacesAutocomplete, {
   getLatLng,
 } from "react-places-autocomplete";
 import { useState, useEffect, useRef } from "react";
-export const Input = ({ type, placeholder, value, onChange }) => {
+export const Input = ({ type, placeholder, value, onChange, disabled }) => {
   return (
     <div className="flex flex-col gap-2">
       <input
@@ -12,6 +12,7 @@ export const Input = ({ type, placeholder, value, onChange }) => {
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        disabled={disabled}
         className="w-[280px] h-[60px] rounded-[13px] px-5"
       />
     </div>
@@ -29,12 +30,13 @@ export const Button = ({ title, onClick }) => {
   );
 };
 
-export const Select = ({ options, value, onChange, placeholder }) => {
+export const Select = ({ options, value, onChange, placeholder, disabled }) => {
   return (
     <div className="flex flex-col gap-2">
       <select
         value={value}
         onChange={onChange}
+        disabled={disabled}
         className="w-[280px] h-[60px] rounded-[13px] px-5 custom-select"
       >
         <option value="" disabled hidden>
@@ -124,7 +126,14 @@ export const GoogleAutocomplete = ({
   );
 };
 
-export const Modal = ({ placeholder, options, onChange, values }) => {
+export const Modal = ({
+  placeholder,
+  options,
+  onChange,
+  values,
+  isMultiple,
+  disabled,
+}) => {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(values);
   const wrapperRef = useRef(null);
@@ -152,7 +161,8 @@ export const Modal = ({ placeholder, options, onChange, values }) => {
     <>
       <ul
         className="w-[280px] min-h-[60px] rounded-[13px] px-5 py-2 flex flex-col gap-1 bg-white cursor-pointer justify-center"
-        onClick={() => setOpen(true)}
+        disabled={disabled}
+        onClick={() => !disabled && setOpen(true)}
       >
         {values.length === 0 ? (
           <li>{placeholder}</li>
@@ -180,10 +190,14 @@ export const Modal = ({ placeholder, options, onChange, values }) => {
                   selected.includes(option) ? "bg-[#FD3A84]" : "bg-white"
                 } ${selected.includes(option) ? "text-white" : "text-black"}`}
                 onClick={() => {
-                  if (selected.includes(option)) {
-                    setSelected(selected.filter((item) => item !== option));
+                  if (isMultiple) {
+                    if (selected.includes(option)) {
+                      setSelected(selected.filter((item) => item !== option));
+                    } else {
+                      setSelected([...selected, option]);
+                    }
                   } else {
-                    setSelected([...selected, option]);
+                    setSelected([option]);
                   }
                 }}
               >

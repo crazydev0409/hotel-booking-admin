@@ -4,10 +4,13 @@ import { http, uploadPath } from "../helper/http";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useParams, useNavigate } from "react-router-dom";
+import EditIcon from "./SvgIcons/EditIcon";
+import DeleteIcon from "./SvgIcons/DeleteIcon";
 const AddRoomComponent = () => {
   const navigate = useNavigate();
   const { _id } = useParams();
   const [isEdit, setIsEdit] = useState(false);
+  const [isUser, setIsUser] = useState(false);
   const [hotel, setHotel] = useState("");
   const [hotels, setHotels] = useState([]);
   const [name, setName] = useState("");
@@ -19,6 +22,7 @@ const AddRoomComponent = () => {
   const [cancellationPolicy, setCancellationPolicy] = useState("");
   const [images, setImages] = useState([]); // [image1, image2, image3, ...]
   const [existImages, setExistImages] = useState([]);
+  const [rooms, setRooms] = useState([]);
   const [error, setError] = useState({
     hotel: false,
     name: false,
@@ -39,7 +43,7 @@ const AddRoomComponent = () => {
       setIsEdit(true);
       http.get(`/admin/get_room/${_id}`).then((res) => {
         const room = res.data.data;
-        setHotel(room.hotel.name);
+        setHotel(room.hotel.identifier);
         setName(room.name);
         setGuestAllowed(room.guestAllowed);
         setAmenities(room.amenities);
@@ -55,7 +59,9 @@ const AddRoomComponent = () => {
   }, [_id]);
 
   const init = () => {
-    setHotel("");
+    if (!isUser) {
+      setHotel("");
+    }
     setName("");
     setGuestAllowed("");
     setAmenities("");
@@ -64,19 +70,34 @@ const AddRoomComponent = () => {
     setRoomAvailable("");
     setCancellationPolicy("");
     setImages([]);
+    setIsEdit(false);
   };
   const getHotelIdsAndNames = () => {
     http
-      .get("/admin/get_hotel_names")
+      .get("/admin/get_hotel_identifiers")
       .then((res) => {
         if (res.data.message === "Hotel Names Fetched Successfully") {
           setHotels(res.data.hotels);
+          const name = sessionStorage.getItem("name");
+          if (name) {
+            setIsUser(true);
+            setHotel(name);
+            const id = res.data.hotels.find(
+              (hotel) => hotel.identifier === name
+            )._id;
+            getRoomsBelongToHotel(id);
+          }
         } else {
         }
       })
       .catch((err) => {
         console.log(err);
       });
+  };
+  const getRoomsBelongToHotel = (id) => {
+    http.get(`/admin/get_hotel/${id}`).then((response) => {
+      setRooms(response.data.data.rooms);
+    });
   };
   const checkAndSetError = (value, key) => {
     setError((prevError) => ({ ...prevError, [key]: !value }));
@@ -95,7 +116,7 @@ const AddRoomComponent = () => {
 
     const formData = new FormData();
 
-    formData.append("hotel", hotels.find((h) => h.name === hotel)._id);
+    formData.append("hotel", hotels.find((h) => h.identifier === hotel)._id);
     formData.append("name", name);
     formData.append("guestAllowed", guestAllowed);
     formData.append("amenities", JSON.stringify(amenities));
@@ -120,7 +141,9 @@ const AddRoomComponent = () => {
         .then((res) => {
           if (res.data.message === "Room Updated Successfully") {
             toast.success("Room Updated Successfully");
-            navigate("/dashboard/all_hotels");
+            if (!isUser) {
+              navigate("/dashboard/all_hotels");
+            }
           } else {
             toast.error("Failed to update room");
           }
@@ -152,6 +175,20 @@ const AddRoomComponent = () => {
   const handleRemoveExist = (index) => {
     setExistImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
+  const toEdit = (_id) => {
+    navigate(`/dashboard/add_room/${_id}`);
+  };
+
+  const toDelete = (_id) => {
+    http.delete(`/admin/delete_room/${_id}`).then((response) => {
+      if (response.data.message === "Room deleted successfully") {
+        toast.success("Room deleted successfully");
+        http.get(`/admin/get_hotel/${_id}`).then((response) => {
+          setRooms(response.data.data.rooms);
+        });
+      }
+    });
+  };
   return (
     <div className="flex flex-col gap-3 pb-5">
       <h1 className="text-4xl text-black text-left font-abril font-semibold mb-11">
@@ -159,10 +196,11 @@ const AddRoomComponent = () => {
       </h1>
 
       <Select
-        options={hotels.map((hotel) => hotel.name) || []}
+        options={hotels.map((hotel) => hotel.identifier) || []}
         value={hotel}
         onChange={(e) => setHotel(e.target.value)}
         placeholder="Select Hotel"
+        disabled={isUser}
       />
       {error.hotel && <p className="text-red-500 pl-2">Hotel is required</p>}
       <Input
@@ -186,12 +224,17 @@ const AddRoomComponent = () => {
         options={["Free Wifi", "Swimming Pool", "Breakfast", "Lunch"]}
         values={amenities}
         onChange={(e) => setAmenities(e)}
+        isMultiple={true}
       />
       {error.amenities && (
         <p className="text-red-500 pl-2">Amenities is required</p>
       )}
       <Select
-        options={["Free Cancellation", "No Cancellation"]}
+        options={[
+          "Free Cancellation",
+          "No Cancellation",
+          "Free cancellation within 24 hours",
+        ]}
         value={cancellationPolicy}
         onChange={(e) => setCancellationPolicy(e.target.value)}
         placeholder="Select Cancellation Policy"
@@ -282,6 +325,34 @@ const AddRoomComponent = () => {
       </div>
       {error.images && <p className="text-red-500 pl-2">Images is required</p>}
       <Button title={isEdit ? "Update Room" : "Add Room"} onClick={saveRoom} />
+      {isUser && (
+        <div className="flex flex-col gap-3 mt-5">
+          <h1 className="text-4xl text-black text-left font-abril font-semibold mb-5">
+            Room Lists
+          </h1>
+          <div>
+            {rooms.map((room) => (
+              <div key={room.id} className="flex gap-2">
+                <div className="w-[300px] h-[60px] rounded-[13px] px-5 bg-white flex items-center mb-2 text-ellipsis">
+                  {room.name}
+                </div>
+                <div
+                  className="h-[60px] w-[60px] rounded-[13px] bg-white flex items-center justify-center cursor-pointer hover:bg-[#EEE] p-3"
+                  onClick={() => toEdit(room._id)}
+                >
+                  <EditIcon />
+                </div>
+                <div
+                  className="h-[60px] w-[60px] rounded-[13px] bg-white flex items-center justify-center cursor-pointer hover:bg-[#EEE] p-3"
+                  onClick={() => toDelete(room._id)}
+                >
+                  <DeleteIcon />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <ToastContainer />
     </div>
   );

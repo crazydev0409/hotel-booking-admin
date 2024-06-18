@@ -3,19 +3,23 @@ import { useNavigate } from "react-router-dom";
 import "react-phone-number-input/style.css";
 import { http } from "../helper/http";
 
-const SignIn = () => {
+const AdminSignIn = () => {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const SignIn = () => {
-    http.post("/admin/signin", { name, password }).then((res) => {
-      if (res.data.message === "Admin SignIn Successfully") {
-        navigate("/dashboard");
-      } else {
-        setError(true);
-      }
-    });
+    http
+      .post("/admin/signin", { name, password, role: "admin" })
+      .then((res) => {
+        if (res.data.message === "Admin SignIn Successfully") {
+          sessionStorage.removeItem("name");
+          sessionStorage.removeItem("isHotel");
+          navigate("/dashboard");
+        } else {
+          setError(true);
+        }
+      });
   };
   return (
     <div className="bg-[#1BF2DD] flex-1 w-screen h-screen relative">
@@ -51,4 +55,4 @@ const SignIn = () => {
   );
 };
 
-export default SignIn;
+export default AdminSignIn;

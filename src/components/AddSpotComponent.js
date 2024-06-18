@@ -4,6 +4,7 @@ import {
   GoogleAutocomplete,
   Input,
   Modal,
+  Select,
   TextArea,
 } from "./CustomTheme";
 import { http, uploadPath } from "../helper/http";
@@ -18,6 +19,7 @@ const AddSpotComponent = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [type, setType] = useState("");
   const [location, setLocation] = useState("");
   const [position, setPosition] = useState([0, 0]);
   const [amenities, setAmenities] = useState([]);
@@ -51,10 +53,12 @@ const AddSpotComponent = () => {
           entrancePolicies,
           closingPolicies,
           openingDays,
+          type,
           images,
           tickets,
         } = res.data.data;
         setName(name);
+        setType(type);
         setDescription(description);
         setLocation(location);
         setPosition([position.lat, position.lng]);
@@ -72,6 +76,7 @@ const AddSpotComponent = () => {
   const init = () => {
     setName("");
     setDescription("");
+    setType("");
     setLocation("");
     setPosition([0, 0]);
     setAmenities([]);
@@ -87,6 +92,7 @@ const AddSpotComponent = () => {
   const saveSpot = () => {
     if (checkAndSetError(name, "name")) return;
     if (checkAndSetError(description, "description")) return;
+    if (checkAndSetError(type, "type")) return;
     if (
       checkAndSetError(
         location && position.some((pos) => pos !== 0),
@@ -102,6 +108,7 @@ const AddSpotComponent = () => {
     const formData = new FormData();
     formData.append("name", name);
     formData.append("description", description);
+    formData.append("type", type);
     formData.append("location", location);
     formData.append("position", JSON.stringify(position));
     formData.append("amenities", JSON.stringify(amenities));
@@ -175,7 +182,6 @@ const AddSpotComponent = () => {
         <h1 className="text-4xl text-black text-left font-abril font-semibold mb-11">
           {isEdit ? "Edit Spot" : "Add Spot"}
         </h1>
-
         <Input
           placeholder="Name"
           value={name}
@@ -190,6 +196,12 @@ const AddSpotComponent = () => {
         {error.description && (
           <p className="text-red-500 pl-2">Description is required</p>
         )}
+        <Select
+          options={["Park", "Museum", "Restaurant"]}
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          placeholder="Type"
+        />
         <GoogleAutocomplete
           placeholder="Location"
           value={location}
@@ -204,6 +216,7 @@ const AddSpotComponent = () => {
           options={["Wifi", "Parking", "Pool", "Gym", "Restaurant"]}
           values={amenities}
           onChange={(value) => setAmenities(value)}
+          isMultiple={true}
         />
         {error.amenities && (
           <p className="text-red-500 pl-2">Amenities is required</p>
@@ -213,6 +226,7 @@ const AddSpotComponent = () => {
           options={["ID Card", "Passport", "Driving License"]}
           values={entrancePolicies}
           onChange={(value) => setEntrancePolicies(value)}
+          isMultiple={true}
         />
         {error.entrancePolicies && (
           <p className="text-red-500 pl-2">Entrance Policies is required</p>
@@ -222,6 +236,7 @@ const AddSpotComponent = () => {
           options={["10 PM", "11 PM", "12 PM"]}
           values={closingPolicies}
           onChange={(value) => setClosingPolicies(value)}
+          isMultiple={true}
         />
         {error.closingPolicies && (
           <p className="text-red-500 pl-2">Closing Policies is required</p>
@@ -239,6 +254,7 @@ const AddSpotComponent = () => {
           ]}
           values={openingDays}
           onChange={(value) => setOpeningDays(value)}
+          isMultiple={true}
         />
         {error.openingDays && (
           <p className="text-red-500 pl-2">Opening Days is required</p>

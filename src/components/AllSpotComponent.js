@@ -8,7 +8,7 @@ const AllSpotComponent = () => {
   const [spots, setSpots] = useState([]);
   const navigate = useNavigate();
   useEffect(() => {
-    http.get("/admin/get_spot_names").then((response) => {
+    http.get("/admin/get_spot_identifiers").then((response) => {
       setSpots(response.data.spots);
     });
   }, []);
@@ -21,7 +21,7 @@ const AllSpotComponent = () => {
     http.delete(`/admin/delete_spot/${_id}`).then((response) => {
       if (response.data.message === "Spot deleted successfully") {
         toast.success("Spot deleted successfully");
-        http.get("/admin/get_spot_names").then((response) => {
+        http.get("/admin/get_spot_identifiers").then((response) => {
           setSpots(response.data.spots);
         });
       }
@@ -32,20 +32,20 @@ const AllSpotComponent = () => {
       <h1 className="text-4xl text-black text-left font-abril font-semibold mb-11">
         List All Spots
       </h1>
-      {spots.map((hotel) => (
-        <div key={hotel.id} className="flex gap-2">
+      {spots.map((spot) => (
+        <div key={spot._id} className="flex gap-2">
           <div className="w-[300px] h-[60px] rounded-[13px] px-5 bg-white flex items-center mb-2 text-ellipsis">
-            {hotel.name}
+            {spot.identifier}
           </div>
           <div
             className="h-[60px] w-[60px] rounded-[13px] bg-white flex items-center justify-center cursor-pointer hover:bg-[#EEE] p-3"
-            onClick={() => toEdit(hotel._id)}
+            onClick={() => toEdit(spot._id)}
           >
             <EditIcon />
           </div>
           <div
             className="h-[60px] w-[60px] rounded-[13px] bg-white flex items-center justify-center cursor-pointer hover:bg-[#EEE] p-3"
-            onClick={() => toDelete(hotel._id)}
+            onClick={() => toDelete(spot._id)}
           >
             <DeleteIcon />
           </div>

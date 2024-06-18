@@ -4,10 +4,13 @@ import { http, uploadPath } from "../helper/http";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useParams, useNavigate } from "react-router-dom";
+import EditIcon from "./SvgIcons/EditIcon";
+import DeleteIcon from "./SvgIcons/DeleteIcon";
 const AddTicketComponent = () => {
   const navigate = useNavigate();
   const { _id } = useParams();
   const [isEdit, setIsEdit] = useState(false);
+  const [isUser, setIsUser] = useState(false);
   const [spot, setSpot] = useState("");
   const [spots, setSpots] = useState([]);
   const [name, setName] = useState("");
@@ -19,6 +22,7 @@ const AddTicketComponent = () => {
   const [roomAvailable, setRoomAvailable] = useState("");
   const [images, setImages] = useState([]); // [image1, image2, image3, ...]
   const [existImages, setExistImages] = useState([]);
+  const [tickets, setTickets] = useState([]);
   const [error, setError] = useState({
     spot: false,
     name: false,
@@ -38,6 +42,7 @@ const AddTicketComponent = () => {
     if (_id) {
       setIsEdit(true);
       http.get(`/admin/get_ticket/${_id}`).then((res) => {
+        debugger;
         const {
           spot,
           name,
@@ -49,7 +54,7 @@ const AddTicketComponent = () => {
           roomAvailable,
           images,
         } = res.data.data;
-        setSpot(spot.name);
+        setSpot(spot.identifier);
         setName(name);
         setGuestAllowed(guestAllowed);
         setAmenities(amenities);
@@ -64,7 +69,9 @@ const AddTicketComponent = () => {
     }
   }, [_id]);
   const init = () => {
-    setSpot("");
+    if (!isUser) {
+      setSpot("");
+    }
     setName("");
     setGuestAllowed("");
     setAmenities("");
@@ -76,16 +83,30 @@ const AddTicketComponent = () => {
   };
   const getSpotIdsAndNames = () => {
     http
-      .get("/admin/get_spot_names")
+      .get("/admin/get_spot_identifiers")
       .then((res) => {
         if (res.data.message === "Spot Names Fetched Successfully") {
           setSpots(res.data.spots);
+          const name = sessionStorage.getItem("name");
+          if (name) {
+            setIsUser(true);
+            setSpot(name);
+            const id = res.data.spots.find(
+              (spot) => spot.identifier === name
+            )._id;
+            getTicketBelongToSpot(id);
+          }
         } else {
         }
       })
       .catch((err) => {
         console.log(err);
       });
+  };
+  const getTicketBelongToSpot = (id) => {
+    http.get(`/admin/get_spot/${id}`).then((response) => {
+      setTickets(response.data.data.tickets);
+    });
   };
   const checkAndSetError = (value, key) => {
     setError((prevError) => ({ ...prevError, [key]: !value }));
@@ -102,7 +123,7 @@ const AddTicketComponent = () => {
     if (checkAndSetError(roomAvailable, "roomAvailable")) return;
     if (checkAndSetError(images.length || existImages.length, "images")) return;
     const formData = new FormData();
-    formData.append("spot", spots.find((h) => h.name === spot)._id);
+    formData.append("spot", spots.find((h) => h.identifier === spot)._id);
     formData.append("name", name);
     formData.append("guestAllowed", guestAllowed);
     formData.append("amenities", JSON.stringify(amenities));
@@ -161,6 +182,20 @@ const AddTicketComponent = () => {
   const handleRemoveExist = (index) => {
     setExistImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
+  const toEdit = (_id) => {
+    navigate(`/dashboard/add_ticket/${_id}`);
+  };
+
+  const toDelete = (_id) => {
+    http.delete(`/admin/delete_ticket/${_id}`).then((response) => {
+      if (response.data.message === "Ticket deleted successfully") {
+        toast.success("Ticket deleted successfully");
+        http.get("/admin/get_tickets").then((response) => {
+          setTickets(response.data.tickets);
+        });
+      }
+    });
+  };
   return (
     <div className="flex flex-col gap-3 pb-5">
       <h1 className="text-4xl text-black text-left font-abril font-semibold mb-11">
@@ -171,7 +206,8 @@ const AddTicketComponent = () => {
         placeholder="Spot"
         value={spot}
         onChange={(e) => setSpot(e.target.value)}
-        options={spots.map((spot) => spot.name) || []}
+        options={spots.map((spot) => spot.identifier) || []}
+        disabled={isUser}
       />
       {error.spot && <p className="text-red-500 pl-2">Spot is required</p>}
       <Input
@@ -220,6 +256,7 @@ const AddTicketComponent = () => {
         options={["Free Wifi", "Swimming Pool", "Breakfast", "Lunch"]}
         values={amenities}
         onChange={(e) => setAmenities(e)}
+        isMultiple={true}
       />
       {error.amenities && (
         <p className="text-red-500 pl-2">Amenities is required</p>
@@ -228,7 +265,11 @@ const AddTicketComponent = () => {
         placeholder="Select Cancellation Policy"
         value={cancellationPolicy}
         onChange={(e) => setCancellationPolicy(e.target.value)}
-        options={["Free Cancellation", "No Cancellation"]}
+        options={[
+          "Free Cancellation",
+          "No Cancellation",
+          "Free cancellation within 24 hours",
+        ]}
       />
       {error.cancellationPolicy && (
         <p className="text-red-500 pl-2">Cancellation Policy is required</p>
@@ -294,6 +335,34 @@ const AddTicketComponent = () => {
         title={isEdit ? "Update Ticket" : "Add Ticket"}
         onClick={saveTicket}
       />
+      {isUser && (
+        <div className="flex flex-col gap-3 mt-5">
+          <h1 className="text-4xl text-black text-left font-abril font-semibold mb-5">
+            Ticket Lists
+          </h1>
+          <div>
+            {tickets.map((ticket) => (
+              <div key={ticket.id} className="flex gap-2">
+                <div className="w-[300px] h-[60px] rounded-[13px] px-5 bg-white flex items-center mb-2 text-ellipsis">
+                  {ticket.name}
+                </div>
+                <div
+                  className="h-[60px] w-[60px] rounded-[13px] bg-white flex items-center justify-center cursor-pointer hover:bg-[#EEE] p-3"
+                  onClick={() => toEdit(ticket._id)}
+                >
+                  <EditIcon />
+                </div>
+                <div
+                  className="h-[60px] w-[60px] rounded-[13px] bg-white flex items-center justify-center cursor-pointer hover:bg-[#EEE] p-3"
+                  onClick={() => toDelete(ticket._id)}
+                >
+                  <DeleteIcon />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <ToastContainer />
     </div>
   );

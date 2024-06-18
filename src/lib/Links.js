@@ -1,5 +1,6 @@
-export const links = [
+export const adminLinks = [
   { title: "DashBoard" },
+  { title: "Sales", path: "sales" },
   { title: "Users" },
   {
     title: "Hotels",
@@ -25,5 +26,21 @@ export const links = [
       },
       { title: "List All Spots", path: "all_spots" },
     ],
+  },
+];
+
+export const hotelLinks = [
+  { title: "Sales", path: "sales" },
+  {
+    title: "Hotels",
+    subLinks: [{ title: "Add Room To Hotel", path: "add_room" }],
+  },
+];
+
+export const spotLinks = [
+  { title: "Sales", path: "sales" },
+  {
+    title: "Spots",
+    subLinks: [{ title: "Add Ticket to Spot", path: "add_ticket" }],
   },
 ];
